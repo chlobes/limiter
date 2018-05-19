@@ -1,14 +1,14 @@
 use std::time::{Instant,Duration};
 
 #[derive(Debug,Copy,Clone)]
-pub struct Limiter<'a> {
+pub struct Limiter {
 	wait_time: Duration,
 	last_sleep: Instant,
-	pub slow_function: &'a fn(Duration),
+	pub slow_function: fn(Duration),
 }
 
-impl<'a> Limiter<'a> {
-	pub fn from_tps(tps: f64, slow_function: Option<&'a fn(Duration)>) -> Self {
+impl Limiter {
+	pub fn from_tps(tps: f64, slow_function: Option<fn(Duration)>) -> Self {
 		let spt = 1.0 / tps;
 
 		if spt.is_sign_negative() || !spt.is_normal() || spt.floor() > u64::max_value() as f64 { panic!("no"); }
@@ -16,7 +16,7 @@ impl<'a> Limiter<'a> {
 		Self {
 			wait_time: Duration::new(spt.floor() as u64, (spt.fract() * 1e9) as u32),
 			last_sleep: Instant::now(),
-			slow_function: slow_function.unwrap_or(&(default_slow_function as fn(Duration))),
+			slow_function: slow_function.unwrap_or(default_slow_function),
 		}
 	}
 
@@ -36,9 +36,9 @@ impl<'a> Limiter<'a> {
 
 use std::cmp::{Eq,PartialEq,Ord,PartialOrd};
 
-impl<'a> Eq for Limiter<'a> {}
+impl Eq for Limiter {}
 
-impl<'a> PartialEq for Limiter<'a> {
+impl PartialEq for Limiter {
 	fn eq(&self, other: &Self) -> bool {
 		self.wait_time.eq(&other.wait_time)
 	}
@@ -46,13 +46,13 @@ impl<'a> PartialEq for Limiter<'a> {
 
 use std::cmp::Ordering;
 
-impl<'a> Ord for Limiter<'a> {
+impl Ord for Limiter {
 	fn cmp(&self, other: &Self) -> Ordering {
 		self.wait_time.cmp(&other.wait_time)
 	}
 }
 
-impl<'a> PartialOrd for Limiter<'a> {
+impl PartialOrd for Limiter {
 	fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
 		self.wait_time.partial_cmp(&other.wait_time)
 	}
