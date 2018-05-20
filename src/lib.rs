@@ -4,12 +4,11 @@ use std::time::{Instant,Duration};
 pub struct Limiter {
 	wait_time: Duration,
 	last_sleep: Instant,
-	pub slow_function: fn(Duration, u64) -> u64,
-	pub data: u64,
+	pub slow_function: fn(Duration),
 }
 
 impl Limiter {
-	pub fn from_tps(tps: f64, slow_function: Option<fn(Duration, u64) -> u64>) -> Self {
+	pub fn from_tps(tps: f64, slow_function: Option<fn(Duration)>) -> Self {
 		let spt = 1.0 / tps;
 
 		if spt.is_sign_negative() || !spt.is_normal() || spt.floor() > u64::max_value() as f64 { panic!("no"); }
@@ -18,7 +17,6 @@ impl Limiter {
 			wait_time: Duration::new(spt.floor() as u64, (spt.fract() * 1e9) as u32),
 			last_sleep: Instant::now(),
 			slow_function: slow_function.unwrap_or(default_slow_function),
-			data: 0,
 		}
 	}
 
@@ -30,8 +28,12 @@ impl Limiter {
 		if let Some(t) = self.wait_time.checked_sub(e) {
 			sleep(t);
 		} else {
-			self.data = (self.slow_function)(e-self.wait_time, self.data);
+			(self.slow_function)(e-self.wait_time);
 		}
+		self.last_sleep = Instant::now();
+	}
+	
+	pub fn reset(&mut self) {
 		self.last_sleep = Instant::now();
 	}
 }
@@ -61,10 +63,5 @@ impl PartialOrd for Limiter {
 }
 
 fn default_slow_function(slow: Duration, mut data: u64) -> u64 {
-	if data > 0 {
-		println!("fell behind by {} seconds, {} nanoseconds",slow.as_secs(),slow.subsec_nanos());
-	} else {
-		data += 1;
-	}
-	data
+	println!("fell behind by {} seconds, {} nanoseconds",slow.as_secs(),slow.subsec_nanos());
 }
