@@ -62,6 +62,6 @@ impl PartialOrd for Limiter {
 	}
 }
 
-fn default_slow_function(slow: Duration, mut data: u64) -> u64 {
+fn default_slow_function(slow: Duration) {
 	println!("fell behind by {} seconds, {} nanoseconds",slow.as_secs(),slow.subsec_nanos());
 }
