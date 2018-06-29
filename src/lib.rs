@@ -36,6 +36,14 @@ impl Limiter {
 	pub fn reset(&mut self) {
 		self.last_sleep = Instant::now();
 	}
+
+	pub fn time_left(&self) -> Option<Duration> {
+		self.last_sleep.elapsed().checked_sub(self.wait_time)
+	}
+	
+	pub fn frac_time_left(&self) -> Option<f64> {
+		self.time_left().map(|t| ((t.as_secs() as f64 * 10f64.powi(9)) + t.subsec_nanos() as f64) / ((t.as_secs() as f64 * 10f64.powi(9)) + (self.wait_time.subsec_nanos() as f64)))
+	}
 }
 
 use std::cmp::{Eq,PartialEq,Ord,PartialOrd};
