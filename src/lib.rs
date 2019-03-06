@@ -1,14 +1,13 @@
 use std::time::{Instant,Duration};
 
-#[derive(Debug,Copy,Clone)]
 pub struct Limiter {
 	wait_time: Duration,
 	last_sleep: Instant,
-	pub slow_function: fn(Duration),
+	pub slow_function: Box<FnMut(Duration)>, //when running slow, this function is called with the amount of time the call to Limiter::sleep() was late by
 }
 
 impl Limiter {
-	pub fn from_tps(tps: f64, slow_function: Option<fn(Duration)>) -> Self {
+	pub fn from_tps<F: 'static + FnMut(Duration)>(tps: f64, slow_function: Option<F>) -> Self {
 		let spt = 1.0 / tps;
 
 		if spt.is_sign_negative() || !spt.is_normal() || spt.floor() > u64::max_value() as f64 { panic!("no"); }
@@ -16,7 +15,7 @@ impl Limiter {
 		Self {
 			wait_time: Duration::new(spt.floor() as u64, (spt.fract() * 1e9) as u32),
 			last_sleep: Instant::now(),
-			slow_function: slow_function.unwrap_or(default_slow_function),
+			slow_function: slow_function.map(|f| Box::new(f) as Box<_>).unwrap_or_else(|| Box::new(default_slow_function) as Box<_>),
 		}
 	}
 
