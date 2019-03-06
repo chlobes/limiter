@@ -7,7 +7,7 @@ pub struct Limiter {
 }
 
 impl Limiter {
-	pub fn from_tps<F: 'static + FnMut(Duration)>(tps: f64, slow_function: Option<F>) -> Self {
+	pub fn from_tps(tps: f64, slow_function: Option<Box<FnMut(Duration)>>) -> Self {
 		let spt = 1.0 / tps;
 
 		if spt.is_sign_negative() || !spt.is_normal() || spt.floor() > u64::max_value() as f64 { panic!("no"); }
@@ -15,7 +15,7 @@ impl Limiter {
 		Self {
 			wait_time: Duration::new(spt.floor() as u64, (spt.fract() * 1e9) as u32),
 			last_sleep: Instant::now(),
-			slow_function: slow_function.map(|f| Box::new(f) as Box<_>).unwrap_or_else(|| Box::new(default_slow_function) as Box<_>),
+			slow_function: slow_function.unwrap_or_else(|| Box::new(default_slow_function) as Box<_>),
 		}
 	}
 
