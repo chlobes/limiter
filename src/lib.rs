@@ -7,7 +7,7 @@ pub struct Limiter<'a> {
 }
 
 impl<'a> Limiter<'a> {
-	pub fn from_tps(tps: f64, slow_function: Option<Box<FnMut(Duration)>>) -> Self {
+	pub fn from_tps(tps: f64, slow_function: Option<Box<FnMut(Duration) + 'a>>) -> Self {
 		let spt = 1.0 / tps;
 
 		if spt.is_sign_negative() || !spt.is_normal() || spt.floor() > u64::max_value() as f64 { panic!("no"); }
