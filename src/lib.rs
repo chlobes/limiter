@@ -1,12 +1,12 @@
 use std::time::{Instant,Duration};
 
-pub struct Limiter {
+pub struct Limiter<'a> {
 	wait_time: Duration,
 	last_sleep: Instant,
-	pub slow_function: Box<FnMut(Duration)>, //when running slow, this function is called with the amount of time the call to Limiter::sleep() was late by
+	pub slow_function: Box<FnMut(Duration) + 'a>, //when running slow, this function is called with the amount of time the call to Limiter::sleep() was late by
 }
 
-impl Limiter {
+impl<'a> Limiter<'a> {
 	pub fn from_tps(tps: f64, slow_function: Option<Box<FnMut(Duration)>>) -> Self {
 		let spt = 1.0 / tps;
 
@@ -47,9 +47,9 @@ impl Limiter {
 
 use std::cmp::{Eq,PartialEq,Ord,PartialOrd};
 
-impl Eq for Limiter {}
+impl<'a> Eq for Limiter<'a> {}
 
-impl PartialEq for Limiter {
+impl<'a> PartialEq for Limiter<'a> {
 	fn eq(&self, other: &Self) -> bool {
 		self.wait_time.eq(&other.wait_time)
 	}
@@ -57,13 +57,13 @@ impl PartialEq for Limiter {
 
 use std::cmp::Ordering;
 
-impl Ord for Limiter {
+impl<'a> Ord for Limiter<'a> {
 	fn cmp(&self, other: &Self) -> Ordering {
 		self.wait_time.cmp(&other.wait_time)
 	}
 }
 
-impl PartialOrd for Limiter {
+impl<'a> PartialOrd for Limiter<'a> {
 	fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
 		self.wait_time.partial_cmp(&other.wait_time)
 	}
