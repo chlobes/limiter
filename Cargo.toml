@@ -2,5 +2,6 @@
 name = "limiter"
 version = "0.1.0"
 authors = ["pypypypypypypypypyp"]
+edition = "2018"
 
 [dependencies]
