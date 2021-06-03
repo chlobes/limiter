@@ -10,7 +10,7 @@ impl<'a> Limiter<'a> {
 	pub fn from_tps<F: FnMut(Duration) + 'a>(tps: f64, callback: F) -> Self {
 		let spt = 1.0 / tps;
 		
-		if spt.is_sign_negative() || !spt.is_normal() || spt.floor() > u64::max_value() as f64 { panic!("no"); }
+		if spt.is_sign_negative() || !spt.is_normal() || spt.floor() > u64::max_value() as f64 { panic!("no {}",spt); }
 		
 		Self {
 			wait_time: Duration::new(spt.floor() as u64, (spt.fract() * 1e9) as u32),
@@ -20,12 +20,10 @@ impl<'a> Limiter<'a> {
 	}
 
 	pub fn sleep(&mut self) {
-		use std::thread::sleep;
-		
 		let e = self.last_sleep.elapsed();
 		
 		if let Some(t) = self.wait_time.checked_sub(e) {
-			sleep(t);
+			std::thread::sleep(t);
 		} else {
 			(self.callback)(e-self.wait_time);
 		}
