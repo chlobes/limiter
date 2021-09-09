@@ -25,7 +25,8 @@ impl<'a> Limiter<'a> {
 		if let Some(t) = self.wait_time.checked_sub(e) {
 			std::thread::sleep(t);
 		} else {
-			self.callback.as_ref().map(|f| f(e-self.wait_time));
+			let t = e-self.wait_time;
+			self.callback.as_mut().map(|f| f(t));
 		}
 		self.last_sleep = Instant::now();
 	}
