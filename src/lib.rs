@@ -3,11 +3,11 @@ use std::time::{Instant,Duration};
 pub struct Limiter<'a> {
 	wait_time: Duration,
 	last_sleep: Instant,
-	pub callback: Box<dyn FnMut(Duration) + 'a>, //when running slow, this function is called with the amount of time the call to Limiter::sleep() was late by
+	pub callback: Option<Box<dyn FnMut(Duration) + 'a>>, //when running slow, this function is called with the amount of time the call to Limiter::sleep() was late by
 }
 
 impl<'a> Limiter<'a> {
-	pub fn from_tps<F: FnMut(Duration) + 'a>(tps: f64, callback: F) -> Self {
+	pub fn from_tps<F: FnMut(Duration) + 'a>(tps: f64) -> Self {
 		let spt = 1.0 / tps;
 		
 		if spt.is_sign_negative() || !spt.is_normal() || spt.floor() > u64::max_value() as f64 { panic!("no {}",spt); }
@@ -15,7 +15,7 @@ impl<'a> Limiter<'a> {
 		Self {
 			wait_time: Duration::new(spt.floor() as u64, (spt.fract() * 1e9) as u32),
 			last_sleep: Instant::now(),
-			callback: Box::new(callback),
+			callback: None,
 		}
 	}
 
@@ -25,7 +25,7 @@ impl<'a> Limiter<'a> {
 		if let Some(t) = self.wait_time.checked_sub(e) {
 			std::thread::sleep(t);
 		} else {
-			(self.callback)(e-self.wait_time);
+			self.callback.as_ref().map(|f| f(e-self.wait_time));
 		}
 		self.last_sleep = Instant::now();
 	}
