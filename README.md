@@ -1,1 +1,1 @@
-limits programs from running too fast
+provides a struct for rate limiting
